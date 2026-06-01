@@ -1,4 +1,23 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+import jsPDF from "jspdf";
+import logo from "./assets/logo.jpeg";
+import * as XLSX from "xlsx";
+import { onAuthStateChanged } from "firebase/auth";
+
+import { SINAPI } from "./data/sinapi";
+import { gerarEstimativas } from "./utils/estimativas";
+import { extrairDadosProjeto } from "./utils/extrator";
+import {
+  auth,
+  provider,
+  signInWithPopup,
+  signOut
+} from "./firebase";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 
 const SYSTEM_PROMPT = `
 Você é um engenheiro orçamentista especialista em SINAPI.
@@ -59,6 +78,112 @@ const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency:
 const fmtn = (v) => new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(v || 0);
 
 export default function App() {
+  console.log(logo);
+
+
+const exportarPDF = () => {
+
+  if (!result) return;
+
+  const doc = new jsPDF();
+
+
+doc.setTextColor(20,20,20);
+
+  doc.setFontSize(26);
+  doc.text("OBRA AI", 20, 25);
+
+  doc.setFontSize(12);
+  doc.setTextColor(40,40,40);
+  doc.text("Quantitativo e Orçamento Inteligente", 20, 33);
+
+  doc.setDrawColor(37,99,235);
+  doc.line(20, 38, 190, 38);
+
+  doc.setTextColor(255,255,255);
+  doc.setFillColor(240,240,240);
+  doc.setTextColor(37,99,235);
+
+  let y = 55;
+
+  doc.setFontSize(14);
+  doc.text("Resumo Financeiro", 20, y);
+
+  y += 14;
+
+  const resumo = [
+    ["Materiais", result.resumo_financeiro?.total_material],
+    ["Mão de obra", result.resumo_financeiro?.total_mao_de_obra],
+    ["BDI", result.resumo_financeiro?.bdi_valor],
+    ["Encargos", result.resumo_financeiro?.encargos_sociais_valor],
+    ["Impostos", result.resumo_financeiro?.impostos_valor],
+  ];
+
+  resumo.forEach(([label, valor]) => {
+
+    doc.setFillColor(15,23,42);
+    doc.roundedRect(20, y-6, 170, 10, 2, 2, "F");
+
+    doc.setTextColor(255,255,255);
+    doc.text(label, 24, y);
+
+    doc.setTextColor(96,165,250);
+    doc.text(String(valor || "R$ 0"), 150, y);
+
+    y += 14;
+  });
+
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.setTextColor(255,255,255);
+  doc.text("Quantitativos", 20, y);
+
+  y += 14;
+
+  result.quantitativos?.forEach((cat) => {
+
+    doc.setFillColor(37,99,235);
+    doc.roundedRect(20, y-6, 170, 10, 2, 2, "F");
+
+    doc.setTextColor(255,255,255);
+    doc.text(cat.categoria, 24, y);
+
+    y += 14;
+
+    cat.itens?.forEach((item) => {
+
+      doc.setTextColor(20,20,20);
+
+      doc.text(
+        `${item.descricao} - ${item.quantidade} ${item.unidade}`,
+        26,
+        y
+      );
+
+      y += 8;
+
+  if
+   (y > 270) {
+
+  doc.addPage();
+
+  doc.setFillColor(255,255,255);
+  doc.rect(0, 0, 210, 297, "F");
+
+  doc.setTextColor(20,20,20);
+
+  y = 20;
+}
+});
+
+
+    y += 8;
+
+  });
+
+  doc.save("orcamento-obra-ai.pdf");
+};
   const [file, setFile] = useState(null);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -66,6 +191,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("upload");
   const [expanded, setExpanded] = useState({});
+  const [user, setUser] = useState(null);
   const fileRef = useRef(null);
 
   const handleFile = (f) => {
@@ -121,85 +247,272 @@ export default function App() {
       }
 
       const data = await res.json();
-  const txt = data.content?.map(i => i.text || "").join("") || "";
+      const txt = data.content?.map(i => i.text || "").join("") || "";
+      const cleanTxt = txt
+      .replaceAll("```json", "")
+      .replaceAll("```", "")
+      .trim();
+      const parsed = JSON.parse(cleanTxt);
 
-const cleanTxt = txt
-  .replaceAll("```json", "")
-  .replaceAll("```", "")
-  .trim();
+const dadosProjeto =
+  extrairDadosProjeto(text);
 
-let parsed;
+parsed.projeto.area_total =
+  dadosProjeto.area + "m²";
 
-try {
-  parsed = JSON.parse(cleanTxt);
-} catch {
-  const jsonMatch = cleanTxt.match(/\{[\s\S]*\}/);
-
-  if (!jsonMatch) {
-    throw new Error("A IA retornou um JSON inválido.");
-  }
-
-  parsed = JSON.parse(jsonMatch[0]);
-}
-
-if (parsed.quantitativos) {
-  parsed.quantitativos = parsed.quantitativos.map((cat) => ({
-    ...cat,
-    subtotal:
-      cat.subtotal ??
-      (cat.itens || []).reduce((acc, item) => {
-        const total =
-          item.total_item ??
-          (
-            ((item.custo_unitario_material || 0) +
-              (item.custo_unitario_mao_de_obra || 0)) *
-            (item.quantidade || 0)
-          );
-
-        return acc + total;
-      }, 0),
-
-    itens: (cat.itens || []).map((item) => ({
-      ...item,
-
-      total_item:
-        item.total_item ??
-        (
-          ((item.custo_unitario_material || 0) +
-            (item.custo_unitario_mao_de_obra || 0)) *
-          (item.quantidade || 0)
-        )
-    }))
-  }));
-}
+parsed.projeto.padrao =
+  dadosProjeto.padrao;
 
 setResult(parsed);
-setTab("result");
-
-setExpanded(
-  Object.fromEntries(
-    (parsed.quantitativos || []).map((_, i) => [i, i < 2])
-  )
-);
+      setResult(parsed);
+      setTab("result");
+      setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
     } catch(e) {
       setError("Erro: " + e.message);
     } finally {
       setLoading(false);
     }
   };
+const exportarExcel = () => {
+  console.log(result);
+
+  if (!result) return;
+
+  const dados = [];
+
+  result.quantitativos?.forEach((cat) => {
+
+    cat.itens?.forEach((item) => {
+
+dados.push({
+
+  Categoria: cat.categoria || "",
+
+  Descricao: item.descricao || "",
+
+  Quantidade: item.quantidade || "",
+
+  Unidade: item.unidade || "",
+
+  Material:
+    item.custo_unitario_material || 0,
+
+  MaoDeObra:
+    item.custo_unitario_mao_de_obra || 0,
+
+  Total:
+    item.total_item || 0
+
+});
+
+    });
+
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(dados);
+  worksheet["!cols"] = [
+
+  { wch: 25 },
+  { wch: 45 },
+  { wch: 12 },
+  { wch: 12 },
+  { wch: 15 },
+  { wch: 15 },
+  { wch: 15 }
+
+];
+
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    workbook,
+    worksheet,
+    "Orçamento"
+  );
+
+  XLSX.writeFile(
+    workbook,
+    "orcamento-obra-ai.xlsx"
+  );
+};
+const loginGoogle = async () => {
+
+  try {
+
+    const result = await signInWithPopup(
+      auth,
+      provider
+    );
+
+    setUser(result.user);
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+};
+
+const logout = async () => {
+
+  await signOut(auth);
+
+  setUser(null);
+
+};
+useEffect(() => {
+
+  const unsubscribe = onAuthStateChanged(
+    auth,
+    (currentUser) => {
+
+      setUser(currentUser);
+
+    }
+  );
+
+  return () => unsubscribe();
+
+}, []);
+
+
+if (!user) {
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0a0a0f", fontFamily:"monospace", color:"#e8e0d0" }}>
-      <div style={{ borderBottom:"1px solid #1a1a25", padding:"20px 24px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ fontSize:22, fontWeight:800, color:"#f4a742" }}>OBRA<span style={{color:"#e8e0d0"}}>·IA</span></div>
-        <div style={{ fontSize:10, color:"#444", letterSpacing:2 }}>QUANTITATIVO E ORCAMENTO POR IA</div>
+
+    <div
+      style={{
+        minHeight:"100vh",
+        display:"flex",
+        justifyContent:"center",
+        alignItems:"center",
+        background:"#020617"
+      }}
+    >
+
+      <div
+        style={{
+          width:"380px",
+          padding:"40px",
+          borderRadius:"24px",
+          background:"#0f172a",
+          border:"1px solid rgba(255,255,255,0.08)",
+          textAlign:"center"
+        }}
+      >
+
+        <img
+          src={logo}
+          alt="logo"
+
+          style={{
+            width:"120px",
+            marginBottom:"24px"
+          }}
+        />
+
+        <h1
+          style={{
+            color:"#fff",
+            fontFamily:"Arial",
+            marginBottom:"12px"
+          }}
+        >
+          OBRA AI
+        </h1>
+
+        <button
+          onClick={loginGoogle}
+
+          style={{
+            width:"100%",
+            padding:"16px",
+            border:"none",
+            borderRadius:"12px",
+            background:"#2563eb",
+            color:"#fff",
+            fontWeight:"700",
+            cursor:"pointer",
+            fontFamily:"Arial"
+          }}
+        >
+          Entrar com Google
+        </button>
+
       </div>
+
+    </div>
+  );
+}
+
+return (
+
+  
+    <div 
+
+    style={{ minHeight:"100vh",
+overflowY:"auto", background:"#0a0a0f", fontFamily:"arial", color:"#e8e0d0" }}>
+
+    <div
+  style={{
+    borderBottom:"1px solid #1a1a25",
+    padding:"28px 32px",
+    display:"flex",
+    justifyContent:"space-between",
+    alignItems:"center",
+    background:"rgba(10,10,15,0.95)",
+    backdropFilter:"blur(12px)",
+    position:"sticky",
+    top:0,
+    zIndex:10
+  }}
+>
+
+
+<div
+  style={{
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    flexDirection:"column",
+    width:"100%",
+    paddingTop:"40px",
+    paddingBottom:"20px"
+  }}
+>
+
+<div
+  style={{
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    width:"100%"
+  }}
+>
+
+  <img
+    src={logo}
+    alt="Obra AI"
+
+style={{
+  width:"400px",
+  objectFit:"contain",
+  background:"transparent",
+  mixBlendMode:"lighten"
+}}
+  
+  />
+
+</div>
+
+</div>
+</div>
 
       <div style={{ borderBottom:"1px solid #1a1a25", padding:"0 24px", display:"flex" }}>
         {[["upload","// Projeto"],["result","// Orcamento"]].map(([id,label]) => (
           <button key={id} onClick={() => (id==="upload" || result) && setTab(id)}
             style={{ background:"none", border:"none", cursor:"pointer", padding:"12px 20px", fontSize:12, letterSpacing:2,
-              color: tab===id ? "#f4a742" : "#555", borderBottom: tab===id ? "2px solid #f4a742" : "2px solid transparent",
+              color: tab===id ? "#3b82f6" : "#555", borderBottom: tab===id ? "2px solid #429bf4" : "2px solid transparent",
               opacity: id==="result" && !result ? 0.3 : 1 }}>
             {label}
           </button>
@@ -210,19 +523,22 @@ setExpanded(
         {tab === "upload" && (
           <div style={{ display:"grid", gap:20 }}>
             <div onClick={() => fileRef.current?.click()}
-              style={{ border:"1px dashed #333", borderRadius:4, padding:48, textAlign:"center", cursor:"pointer", background:"#0d0d15" }}>
+              style={{border:"1px dashed rgba(59,130,246,0.35)",
+boxShadow:"0 0 40px rgba(59,130,246,0.08)",
+background:"rgba(255,255,255,0.02)",
+transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"pointer", background:"#0d0d15" }}>
               <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])} />
-              {file ? <div style={{color:"#f4a742"}}>{file.name}</div> : <div style={{color:"#555"}}>Arraste o projeto aqui (PDF, PNG, JPG) ou clique</div>}
+              {file ? <div style={{color:"#3b82f6"}}>{file.name}</div> : <div style={{color:"#555"}}>Arraste o projeto aqui (PDF) ou clique</div>}
             </div>
             <textarea value={text} onChange={e=>setText(e.target.value)} rows={5}
               placeholder="Ou descreva o projeto: Ex: Casa 120m2, 3 quartos, fundacao radier, alvenaria estrutural, Sao Paulo/SP"
-              style={{ width:"100%", background:"#0d0d15", border:"1px solid #222", color:"#e8e0d0", fontFamily:"monospace", fontSize:13, padding:16, resize:"vertical", outline:"none", borderRadius:4 }} />
+              style={{ width:"100%", background:"#0d0d15", border:"1px solid #222", color:"#e8e0d0", fontFamily:"arial", fontSize:13, padding:16, resize:"vertical", outline:"none", borderRadius:4 }} />
             {error && <div style={{background:"rgba(255,80,80,0.1)", border:"1px solid rgba(255,80,80,0.3)", padding:"12px 16px", color:"#ff8080", fontSize:12, borderRadius:4}}>
               {error}
             </div>}
             <button onClick={analyze} disabled={loading || (!file && !text.trim())}
-              style={{ background: loading ? "#333" : "#f4a742", color: loading ? "#666" : "#0a0a0f", border:"none", cursor: loading ? "not-allowed" : "pointer",
-                fontFamily:"monospace", fontSize:13, fontWeight:600, letterSpacing:2, padding:"14px 32px", width:"100%", borderRadius:4 }}>
+              style={{ background: loading ? "#333" : "#3b82f6", color: loading ? "#666" : "#0a0a0f", border:"none", cursor: loading ? "not-allowed" : "pointer",
+                fontFamily:"arial", fontSize:13, fontWeight:600, letterSpacing:2, padding:"14px 32px", width:"100%", borderRadius:4 }}>
               {loading ? "ANALISANDO..." : "GERAR QUANTITATIVO E ORCAMENTO"}
             </button>
           </div>
@@ -238,36 +554,94 @@ setExpanded(
               </div>
               <div style={{ textAlign:"right" }}>
                 <div style={{ fontSize:10, color:"#444", letterSpacing:2 }}>TOTAL GERAL</div>
-                <div style={{ fontSize:28, fontWeight:800, color:"#f4a742" }}>{fmt(result.resumo_financeiro?.total_geral)}</div>
+                <div style={{ fontSize:28, fontWeight:800, color:"#3b82f6" }}>{fmt(result.resumo_financeiro?.total_geral)}</div>
                 <div style={{ fontSize:11, color:"#555" }}>{fmt(result.resumo_financeiro?.custo_por_m2)}/m2</div>
               </div>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12 }}>
-              {[["Materiais", result.resumo_financeiro?.total_material,"#4a9eff"],
-                ["Mao de Obra", result.resumo_financeiro?.total_mao_de_obra,"#a78bfa"],
-                ["BDI", result.resumo_financeiro?.bdi_valor,"#34d399"],
-                ["Enc. Sociais", result.resumo_financeiro?.encargos_sociais_valor,"#fb923c"],
-                ["Impostos", result.resumo_financeiro?.impostos_valor,"#f43f5e"]
-              ].map(([label,value,color]) => (
-                <div key={label} style={{ background:"#0d0d15", border:"1px solid #1a1a25", padding:"16px", borderRadius:4 }}>
-                  <div style={{ fontSize:16, fontWeight:600, color }}>{fmt(value)}</div>
-                  <div style={{ fontSize:10, color:"#555", marginTop:4, letterSpacing:1 }}>{label}</div>
-                </div>
-              ))}
-            </div>
+          <div
+  style={{
+    display:"grid",
+    gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",
+    gap:16
+  }}
+>
+
+  {[
+    ["Materiais", result.resumo_financeiro?.total_material,"#60a5fa"],
+    ["Mão de Obra", result.resumo_financeiro?.total_mao_de_obra,"#a78bfa"],
+    ["BDI", result.resumo_financeiro?.bdi_valor,"#34d399"],
+    ["Encargos", result.resumo_financeiro?.encargos_sociais_valor,"#fb923c"],
+    ["Impostos", result.resumo_financeiro?.impostos_valor,"#f43f5e"]
+  ].map(([label,value,color]) => (
+
+    <div
+      key={label}
+
+      style={{
+        background:"rgba(15,15,25,0.85)",
+        border:`1px solid ${color}30`,
+        padding:"22px",
+        borderRadius:16,
+        backdropFilter:"blur(10px)",
+        boxShadow:`0 0 25px ${color}15`,
+        transition:"0.3s"
+      }}
+    >
+
+      <div
+        style={{
+          fontSize:11,
+          color:"#666",
+          letterSpacing:2,
+          marginBottom:10,
+          textTransform:"uppercase"
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize:22,
+          fontWeight:800,
+          color
+        }}
+      >
+        {fmt(value)}
+      </div>
+
+    </div>
+  ))}
+</div>
 
             <div style={{ display:"grid", gap:8 }}>
               {result.quantitativos?.map((cat, idx) => (
                 <div key={idx} style={{ border:"1px solid #1a1a25", borderRadius:4, overflow:"hidden" }}>
                   <div onClick={() => setExpanded(p=>({...p,[idx]:!p[idx]}))}
-                    style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 20px", cursor:"pointer", background:"#0d0d15" }}>
+                  
+  style={{
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+
+    padding:"24px 40px",
+
+    borderBottom:"1px solid rgba(255,255,255,0.06)",
+
+    background:"#000814",
+
+    backdropFilter:"blur(20px)",
+
+    boxShadow:"0 8px 40px rgba(0,0,0,0.45)"
+  }}
+>
                     <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                      <span style={{ color:"#f4a742" }}>{expanded[idx]?"▼":"▶️"}</span>
+                      <span style={{ color:"#3b82f6" }}>{expanded[idx]?"▼":"▶️"}</span>
                       <span style={{ fontSize:13 }}>{cat.categoria}</span>
                       <span style={{ fontSize:10, color:"#555" }}>{cat.itens?.length} itens</span>
                     </div>
-                    <div style={{ color:"#f4a742", fontWeight:600 }}>{fmt(cat.subtotal)}</div>
+                    <div style={{ color:"#3b82f6", fontWeight:600 }}>{fmt(cat.subtotal)}</div>
                   </div>
                   {expanded[idx] && (
                     <div style={{ overflowX:"auto" }}>
@@ -285,9 +659,9 @@ setExpanded(
                               <td style={{ padding:"10px 12px", color:"#ccc" }}>{item.descricao}</td>
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>{item.unidade}</td>
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>{fmtn(item.quantidade)}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#4a9eff" }}>{fmt(item.custo_unitario_material)}</td>
+                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#60a5fa" }}>{fmt(item.custo_unitario_material)}</td>
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#a78bfa" }}>{fmt(item.custo_unitario_mao_de_obra)}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#f4a742", fontWeight:600 }}>{fmt(item.total_item)}</td>
+                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#3b82f6", fontWeight:600 }}>{fmt(item.total_item)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -297,14 +671,54 @@ setExpanded(
                 </div>
               ))}
             </div>
+<button
+  type="button"
+  onClick={exportarPDF}
 
+  style={{
+    background:"linear-gradient(135deg,#2563eb,#3b82f6,#60a5fa)",
+boxShadow:"0 0 35px rgba(59,130,246,0.45)",
+transform:"translateY(0px)",
+transition:"0.3s",
+    border:"none",
+    color:"#000",
+    cursor:"pointer",
+    fontFamily:"arial",
+    fontSize:13,
+    fontWeight:700,
+    padding:"12px",
+    borderRadius:4,
+    marginRight:"12px"
+  }}
+>
+  EXPORTAR PDF
+</button>
             <button onClick={() => { setResult(null); setFile(null); setText(""); setTab("upload"); }}
-              style={{ background:"transparent", border:"1px solid #333", color:"#888", cursor:"pointer", fontFamily:"monospace", fontSize:13, padding:"12px", borderRadius:4 }}>
+              style={{ background:"transparent", border:"1px solid #333", color:"#888", cursor:"pointer", fontFamily:"arial", fontSize:13, padding:"12px", borderRadius:4 }}>
               NOVO PROJETO
             </button>
+            <button
+  type="button"
+  onClick={exportarExcel}
+
+  style={{
+    width:"100%",
+    padding:"18px",
+    borderRadius:"14px",
+    border:"1px solid #2563eb",
+    background:"transparent",
+    color:"#60a5fa",
+    fontWeight:"700",
+    cursor:"pointer",
+    marginBottom:"12px",
+    fontFamily:"Arial"
+  }}
+>
+  EXPORTAR EXCEL
+</button>
           </div>
         )}
       </div>
     </div>
-  );
-}
+);
+  }
