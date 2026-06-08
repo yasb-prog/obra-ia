@@ -1,9 +1,15 @@
+
+import { initAnalytics, pageView, trackEvent } from "./utils/analytics";
 import { useState, useRef, useEffect } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import jsPDF from "jspdf";
 import logo from "./assets/logo.jpeg";
 import * as XLSX from "xlsx";
 import { onAuthStateChanged } from "firebase/auth";
+import ReactGA from "react-ga4";
+
+
+
 
 import { SINAPI } from "./data/sinapi";
 import { gerarEstimativas } from "./utils/estimativas";
@@ -14,7 +20,7 @@ import {
   signInWithPopup,
   signOut
 } from "./firebase";
-
+ReactGA.initialize("G-6JFRXKH5LX");
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -78,10 +84,15 @@ const fmt = (v) => new Intl.NumberFormat("pt-BR", { style: "currency", currency:
 const fmtn = (v) => new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(v || 0);
 
 export default function App() {
+  useEffect(() => {
+  initAnalytics();
+  pageView();
+}, []);
   console.log(logo);
 
 
 const exportarPDF = () => {
+  trackEvent("Exportar PDF");
 
   if (!result) return;
 
@@ -155,16 +166,47 @@ doc.setTextColor(20,20,20);
 
       doc.setTextColor(20,20,20);
 
-      doc.text(
-        `${item.descricao} - ${item.quantidade} ${item.unidade}`,
-        26,
-        y
-      );
+doc.text(
+  `${item.descricao}`,
+  20,
+  y
+);
 
-      y += 8;
+y += 6;
 
-  if
-   (y > 270) {
+doc.setFontSize(9);
+
+doc.text(
+  `Qtd: ${item.quantidade} ${item.unidade}`,
+  25,
+  y
+);
+
+y += 5;
+
+doc.text(
+  `Material: R$ ${item.custo_unitario_material}`,
+  25,
+  y
+);
+
+y += 5;
+
+doc.text(
+  `Mão de obra: R$ ${item.custo_unitario_mao_de_obra}`,
+  25,
+  y
+);
+
+y += 5;
+
+doc.text(
+  `Total: R$ ${item.total_item}`,
+  25,
+  y
+);
+
+y += 10;
 
   doc.addPage();
 
@@ -174,15 +216,21 @@ doc.setTextColor(20,20,20);
   doc.setTextColor(20,20,20);
 
   y = 20;
-}
-});
 
+      doc.text(
+        `Total: R$ ${item.total_item}`,
+        25,
+        y
+      );
 
-    y += 8;
+      y += 10;
+
+    });
 
   });
 
   doc.save("orcamento-obra-ai.pdf");
+
 };
   const [file, setFile] = useState(null);
   const [text, setText] = useState("");
@@ -193,8 +241,10 @@ doc.setTextColor(20,20,20);
   const [expanded, setExpanded] = useState({});
   const [user, setUser] = useState(null);
   const fileRef = useRef(null);
+  const [orcamentos, setOrcamentos] = useState([]);
 
   const handleFile = (f) => {
+    trackEvent("Upload PDF");
     if (!f) return;
     const ok = ["application/pdf","image/jpeg","image/png","image/webp"];
     if (!ok.includes(f.type)) { setError("Use PDF, JPG, PNG ou WEBP."); return; }
@@ -202,6 +252,7 @@ doc.setTextColor(20,20,20);
   };
 
   const analyze = async () => {
+    trackEvent("Gerar Orcamento");
     if (!file && !text.trim()) { setError("Insira um arquivo ou descreva o projeto."); return; }
     setLoading(true); setError(null); setResult(null);
     try {
@@ -223,36 +274,61 @@ doc.setTextColor(20,20,20);
         messages = [{ role: "user", content: text }];
       }
 
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    const res = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt
+            }
+          ]
+        }
+      ]
+    })
+  }
+);
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({
-          model: "claude-opus-4-8",
-          max_tokens: 8000,
-          system: SYSTEM_PROMPT,
-          messages
-        })
-      });
+const data = await res.json();
+
+const texto =
+  data.candidates?.[0]
+      ?.content?.parts?.[0]
+      ?.text;
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(JSON.stringify(err));
-      }
-
-      const data = await res.json();
-      const txt = data.content?.map(i => i.text || "").join("") || "";
-      const cleanTxt = txt
+        throw new Error(
+  JSON.stringify(data)
+);
+}
+  
+      const cleanTxt = texto
       .replaceAll("```json", "")
       .replaceAll("```", "")
       .trim();
       const parsed = JSON.parse(cleanTxt);
+      const historico = JSON.parse(
+  localStorage.getItem("orcamentos") || "[]"
+);
+
+historico.unshift({
+  id: Date.now(),
+  criadoEm: new Date().toISOString(),
+  resultado: parsed
+});
+
+localStorage.setItem(
+  "orcamentos",
+  JSON.stringify(historico)
+);
+
+
 
 const dadosProjeto =
   extrairDadosProjeto(text);
@@ -264,7 +340,6 @@ parsed.projeto.padrao =
   dadosProjeto.padrao;
 
 setResult(parsed);
-      setResult(parsed);
       setTab("result");
       setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
     } catch(e) {
@@ -274,6 +349,7 @@ setResult(parsed);
     }
   };
 const exportarExcel = () => {
+  trackEvent("Exportar Excel");
   console.log(result);
 
   if (!result) return;
@@ -300,14 +376,17 @@ dados.push({
   MaoDeObra:
     item.custo_unitario_mao_de_obra || 0,
 
-  Total:
-    item.total_item || 0
+Total:
+  item.total_item || 0
 
 });
 
-    });
 
-  });
+});
+
+});
+
+
 
   const worksheet = XLSX.utils.json_to_sheet(dados);
   worksheet["!cols"] = [
@@ -335,32 +414,36 @@ dados.push({
     "orcamento-obra-ai.xlsx"
   );
 };
+
 const loginGoogle = async () => {
-
   try {
+    const result = await signInWithPopup(auth, provider);
 
-    const result = await signInWithPopup(
-      auth,
-      provider
-    );
+    trackEvent("Login Google");
 
     setUser(result.user);
-
   } catch (err) {
-
     console.log(err);
-
   }
 };
 
 const logout = async () => {
-
   await signOut(auth);
-
   setUser(null);
+};
+
+const carregarOrcamentos = () => {
+
+  const dados = JSON.parse(
+    localStorage.getItem("orcamentos") || "[]"
+  );
+
+  setOrcamentos(dados);
 
 };
+
 useEffect(() => {
+ReactGA.send("pageview");
 
   const unsubscribe = onAuthStateChanged(
     auth,
@@ -374,7 +457,13 @@ useEffect(() => {
   return () => unsubscribe();
 
 }, []);
+useEffect(() => {
 
+  if(user){
+    carregarOrcamentos();
+  }
+
+}, [user]);
 
 if (!user) {
 
@@ -509,13 +598,40 @@ style={{
 </div>
 
       <div style={{ borderBottom:"1px solid #1a1a25", padding:"0 24px", display:"flex" }}>
-        {[["upload","// Projeto"],["result","// Orcamento"]].map(([id,label]) => (
-          <button key={id} onClick={() => (id==="upload" || result) && setTab(id)}
-            style={{ background:"none", border:"none", cursor:"pointer", padding:"12px 20px", fontSize:12, letterSpacing:2,
-              color: tab===id ? "#3b82f6" : "#555", borderBottom: tab===id ? "2px solid #429bf4" : "2px solid transparent",
-              opacity: id==="result" && !result ? 0.3 : 1 }}>
-            {label}
-          </button>
+        
+ {[
+  ["upload","// Projeto"],
+  ["result","// Orcamento"],
+  ["historico","// Historico"]
+].map(([id,label]) => (
+
+  <button
+    key={id}
+
+    onClick={() => {
+      if (
+        id === "upload" ||
+        id === "historico" ||
+        result
+      ) {
+        setTab(id);
+      }
+    }}
+
+    style={{
+      background:"none",
+      border:"none",
+      cursor:"pointer",
+      padding:"12px 20px",
+      fontSize:12
+    }}
+  >
+
+    {label}
+
+  </button>
+
+
         ))}
       </div>
 
@@ -543,7 +659,91 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
             </button>
           </div>
         )}
+{tab === "historico" && (
 
+  <div
+    style={{
+      display:"grid",
+      gap:"16px"
+    }}
+  >
+
+    <h2
+      style={{
+        color:"#3b82f6",
+        marginBottom:"20px"
+      }}
+    >
+      Meus Orçamentos
+    </h2>
+
+    {orcamentos.length === 0 && (
+
+      <div
+        style={{
+          color:"#888",
+          padding:"20px",
+          textAlign:"center"
+        }}
+      >
+        Nenhum orçamento encontrado.
+      </div>
+
+    )}
+
+    {orcamentos.map((orcamento) => (
+
+      <div
+        key={orcamento.id}
+
+        style={{
+          background:"#0d0d15",
+          border:"1px solid #1a1a25",
+          borderRadius:"12px",
+          padding:"20px"
+        }}
+      >
+
+        <div
+          style={{
+            fontSize:"18px",
+            fontWeight:"700"
+          }}
+        >
+          {orcamento.resultado?.projeto?.nome}
+        </div>
+
+        <div
+          style={{
+            color:"#888",
+            marginTop:"8px"
+          }}
+        >
+          {orcamento.resultado?.projeto?.tipo}
+        </div>
+
+        <div
+          style={{
+            color:"#3b82f6",
+            fontSize:"24px",
+            fontWeight:"800",
+            marginTop:"12px"
+          }}
+        >
+          {fmt(
+            orcamento.resultado
+            ?.resumo_financeiro
+            ?.total_geral
+          )}
+        </div>
+
+      </div>
+
+    ))}
+
+  </div>
+
+)}
         {tab === "result" && result && (
           <div style={{ display:"grid", gap:20 }}>
             <div style={{ background:"#0d0d15", border:"1px solid #1a1a25", padding:"20px 24px", borderRadius:4, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
@@ -722,3 +922,4 @@ transition:"0.3s",
     </div>
 );
   }
+  
