@@ -100,7 +100,15 @@ Nunca retorne:
 "itens": []
 
 Sempre preencher quantidade, unidade, código SINAPI e valor.
-["SINAPI","Descricao","Un","Qtd","Mat/Un","MO/Un","Total"]<td>{item.codigo_sinapi}</td>
+RETORNE APENAS JSON VÁLIDO.
+
+NÃO utilize markdown.
+NÃO utilize ```json.
+NÃO utilize comentários.
+NÃO utilize aspas dentro dos textos.
+Escape corretamente todos os caracteres especiais.
+A resposta deve ser compatível com JSON.parse().
+Cada categoria deve conter no mínimo 3 itens.
 `;
 
 
@@ -336,17 +344,71 @@ if (data.error) {
 const textoClaude =
   data.content?.[0]?.text ||
   data.anthropicResponse;
-  console.log("TEXTO CLAUDE:");
-console.log(textoClaude);
+
 if (!textoClaude) {
   throw new Error("Claude não retornou conteúdo.");
 }
-const textoLimpo = textoClaude
-  .replace(/```json/g, "")
-  .replace(/```/g, "")
-  .trim();
 
-const parsed = JSON.parse(textoLimpo);
+console.log("TEXTO CLAUDE:");
+console.log(textoClaude);
+
+console.log("TIPO:");
+console.log(typeof textoClaude);
+
+console.log("PRIMEIROS 200 CHARS:");
+console.log(textoClaude.substring(0, 200));
+
+const respostaAnthropic =
+  JSON.parse(textoClaude);
+  
+console.log("CONTENT:");
+console.log(respostaAnthropic.content);
+
+const textoLimpo =
+  respostaAnthropic.content?.[0]?.text
+    ?.replace(/```json/g, "")
+    ?.replace(/```/g, "")
+    ?.trim();
+
+console.log("TEXTO LIMPO:");
+console.log(textoLimpo);
+
+console.log("TAMANHO:");
+console.log(textoLimpo.length);
+
+let parsed;
+
+try {
+
+  parsed = JSON.parse(textoLimpo);
+
+} catch (e) {
+
+  console.log("ERRO JSON:");
+  console.log(e);
+
+  console.log("POSICAO:");
+  console.log(e.message);
+
+  console.log("ULTIMOS 500 CHARS:");
+  console.log(
+    textoLimpo.substring(
+      textoLimpo.length - 500
+    )
+  );
+
+  throw e;
+}
+
+  console.log("ERRO JSON:");
+  console.log(e);
+
+  console.log("TEXTO LIMPO:");
+  console.log(textoLimpo);
+
+  throw e;
+
+}
  
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
@@ -385,12 +447,12 @@ setExpanded(
 );
       setTab("result");
       setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
-    } catch(e) {
+     catch(e) {
       setError("Erro: " + e.message);
     } finally {
       setLoading(false);
     }
-  };
+  ;
 
 const exportarExcel = () => {
   trackEvent("Exportar Excel");
@@ -894,12 +956,27 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
                       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
                         <thead>
                           <tr style={{ background:"#080810" }}>
-                            {["Descricao","Un","Qtd","Mat/Un","MO/Un","Total"].map(h=>(
-                              <th key={h} style={{ padding:"8px 12px", textAlign:h==="Descricao"?"left":"right", fontSize:9, color:"#444", letterSpacing:1 }}>{h}</th>
-                            ))}
+                            {["SINAPI","Descricao","Un","Qtd","Mat/Un","MO/Un","Total"].map(h => (
+  <th
+    key={h}
+    style={{
+      padding:"8px 12px",
+      textAlign:h==="Descricao"?"left":"right",
+      fontSize:9,
+      color:"#444",
+      letterSpacing:1
+    }}
+  >
+    {h}
+  </th>
+))}
+                            
+                            
                           </tr>
                         </thead>
                         <tbody>
+                          
+
                           {cat.itens?.map((item, i) => (
                             <tr key={i} style={{ borderBottom:"1px solid #111" }}>
                               <td style={{ padding:"10px 12px", color:"#ccc" }}>{item.descricao}</td>
