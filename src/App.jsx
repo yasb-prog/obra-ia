@@ -11,6 +11,7 @@ import ReactGA from "react-ga4";
 
 
 
+
 import { SINAPI } from "./data/sinapi";
 import { gerarEstimativas } from "./utils/estimativas";
 import { extrairDadosProjeto } from "./utils/extrator";
@@ -23,7 +24,8 @@ import {
 ReactGA.initialize("G-6JFRXKH5LX");
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
+const ANTHROPIC_API_KEY =
+  import.meta.env.VITE_ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `
 Você é um engenheiro orçamentista especialista em SINAPI.
@@ -56,150 +58,33 @@ Use exatamente esta estrutura:
 
 : [
 
-     quantitativos: [
-  {
-    categoria: "Fundação",
-    subtotal: 25000,
-    itens: [...]
-  },
-
-  {
-    categoria: "Estrutura",
-    subtotal: 45000,
-    itens: [...]
-     descricao: "Escavação manual",
-        unidade: "m³",
-        quantidade: 25,
-        custo_unitario_material: 0,
-        custo_unitario_mao_de_obra: 95,
-        total_item: 2375
-  },
-
-  {
-    categoria: "Alvenaria",
-    subtotal: 38000,
-    itens: [...]
-  },
-
-  {
-    categoria: "Chapisco",
-    subtotal: 8500,
-    itens: [
-      {
-        descricao: "Chapisco paredes",
-        unidade: "m²",
-        quantidade: 600,
-        custo_unitario_material: 4,
-        custo_unitario_mao_de_obra: 5,
-        total_item: 5400
-      }
-    ]
-  },
-
-  {
-    categoria: "Reboco",
-    subtotal: 18000,
-    itens: [
-      {
-        descricao: "Reboco interno",
-        unidade: "m²",
-        quantidade: 600,
-        custo_unitario_material: 10,
-        custo_unitario_mao_de_obra: 20,
-        total_item: 18000
-      }
-    ]
-  },
-
-  {
-    categoria: "Pisos",
-    subtotal: 28000,
-    itens: [
-      {
-        descricao: "Porcelanato",
-        unidade: "m²",
-        quantidade: 150,
-        custo_unitario_material: 120,
-        custo_unitario_mao_de_obra: 40,
-        total_item: 24000
-      }
-    ]
-  },
-
-  {
-    categoria: "Esquadrias",
-    subtotal: 22000,
-    itens: [
-      {
-        descricao: "Portas e janelas",
-        unidade: "vb",
-        quantidade: 1,
-        custo_unitario_material: 18000,
-        custo_unitario_mao_de_obra: 4000,
-        total_item: 22000
-      }
-    ]
-  },
-
-  {
-    categoria: "Instalações Hidrossanitárias",
-    subtotal: 18000,
-    itens: [
-      {
-        descricao: "Tubulações e conexões",
-        unidade: "vb",
-        quantidade: 1,
-        custo_unitario_material: 12000,
-        custo_unitario_mao_de_obra: 6000,
-        total_item: 18000
-      }
-    ]
-  },
-
-  {
-    categoria: "Instalações Elétricas",
-    subtotal: 15000,
-    itens: [
-      {
-        descricao: "Fiação, quadros e tomadas",
-        unidade: "vb",
-        quantidade: 1,
-        custo_unitario_material: 9000,
-        custo_unitario_mao_de_obra: 6000,
-        total_item: 15000
-      }
-    ]
-  },
-
-  {
-    categoria: "Pintura",
-    subtotal: 12000,
-    itens: [
-      {
-        descricao: "Pintura interna e externa",
-        unidade: "m²",
-        quantidade: 600,
-        custo_unitario_material: 8,
-        custo_unitario_mao_de_obra: 12,
-        total_item: 12000
-      }
-    ]
-  },
-
-  {
-    categoria: "Instalações Especiais",
-    subtotal: 10000,
-    itens: [
-      {
-        descricao: "Infra para internet, CFTV e automação",
-        unidade: "vb",
-        quantidade: 1,
-        custo_unitario_material: 7000,
-        custo_unitario_mao_de_obra: 3000,
-        total_item: 10000
-      }
-    ]
-  }
+    quantitativos: [
+  { categoria: "Fundação", subtotal: area * 120, itens: [] },
+  { categoria: "Estrutura", subtotal: area * 220, itens: [] },
+  { categoria: "Alvenaria", subtotal: area * 180, itens: [] },
+  { categoria: "Chapisco", subtotal: area * 40, itens: [] },
+  { categoria: "Reboco", subtotal: area * 80, itens: [] },
+  { categoria: "Contrapiso", subtotal: area * 60, itens: [] },
+  { categoria: "Pisos", subtotal: area * 180, itens: [] },
+  { categoria: "Revestimentos", subtotal: area * 120, itens: [] },
+  { categoria: "Forro", subtotal: area * 70, itens: [] },
+  { categoria: "Cobertura", subtotal: area * 220, itens: [] },
+  { categoria: "Impermeabilização", subtotal: area * 35, itens: [] },
+  { categoria: "Esquadrias", subtotal: area * 150, itens: [] },
+  { categoria: "Vidros", subtotal: area * 45, itens: [] },
+  { categoria: "Pintura", subtotal: area * 90, itens: [] },
+  { categoria: "Instalações Hidrossanitárias", subtotal: area * 120, itens: [] },
+  { categoria: "Instalações Elétricas", subtotal: area * 100, itens: [] },
+  { categoria: "SPDA", subtotal: area * 20, itens: [] },
+  { categoria: "Combate a Incêndio", subtotal: area * 30, itens: [] },
+  { categoria: "Climatização", subtotal: area * 60, itens: [] },
+  { categoria: "CFTV", subtotal: area * 20, itens: [] },
+  { categoria: "Automação", subtotal: area * 25, itens: [] },
+  { categoria: "Internet e Dados", subtotal: area * 15, itens: [] },
+  { categoria: "Louças e Metais", subtotal: area * 90, itens: [] },
+  { categoria: "Urbanização", subtotal: area * 50, itens: [] },
+  { categoria: "Paisagismo", subtotal: area * 30, itens: [] },
+  { categoria: "Limpeza Final", subtotal: area * 10, itens: [] }
 ]
 
 NÃO escreva explicações.
@@ -413,6 +298,42 @@ const dadosProjeto =
 
   const area = Number(dadosProjeto.area || 150);
 
+
+const response = await fetch(
+  "/api/orcamento",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-0",
+      max_tokens: 4000,
+      messages: [
+        {
+          role: "user",
+          content: `
+${SYSTEM_PROMPT}
+
+Área: ${area} m²
+
+Descrição:
+${text}
+`
+        }
+      ]
+    })
+  }
+);
+
+const data = await response.json();
+
+console.log("RESPOSTA CLAUDE:", data);
+
+console.log("CLAUDE:", data);
+
 const parsed = {
   projeto: {
     nome: "Projeto ObraAI",
@@ -433,86 +354,34 @@ const parsed = {
     total_geral: area * 1780
   },
 
-  quantitativos:
-   [
-{
-  categoria: "Fundação",
-  subtotal: 25000,
-  itens: []
-},
-
-{
-  categoria: "Estrutura",
-  subtotal: 45000,
-  itens: []
-},
-
-{
-  categoria: "Alvenaria",
-  subtotal: 38000,
-  itens: []
-},
-
-{
-  categoria: "Chapisco",
-  subtotal: 8500,
-  itens: []
-},
-
-{
-  categoria: "Reboco",
-  subtotal: 18000,
-  itens: []
-},
-
-{
-  categoria: "Pisos",
-  subtotal: 28000,
-  itens: []
-},
-
-{
-  categoria: "Esquadrias",
-  subtotal: 22000,
-  itens: []
-},
-
-{
-  categoria: "Instalações Hidrossanitárias",
-  subtotal: 18000,
-  itens: []
-},
-
-{
-  categoria: "Instalações Elétricas",
-  subtotal: 15000,
-  itens: []
-},
-
-{
-  categoria: "Pintura",
-  subtotal: 12000,
-  itens: []
-},
-
-{
-  categoria: "Cobertura",
-  subtotal: 32000,
-  itens: []
-},
-
-{
-  categoria: "Louças e Metais",
-  subtotal: 14000,
-  itens: []
-},
-
-{
-  categoria: "Instalações Especiais",
-  subtotal: 10000,
-  itens: []
-}
-  ]
+ quantitativos: [
+  { categoria: "Fundação", subtotal: area * 120, itens: [] },
+  { categoria: "Estrutura", subtotal: area * 220, itens: [] },
+  { categoria: "Alvenaria", subtotal: area * 180, itens: [] },
+  { categoria: "Chapisco", subtotal: area * 40, itens: [] },
+  { categoria: "Reboco", subtotal: area * 80, itens: [] },
+  { categoria: "Contrapiso", subtotal: area * 60, itens: [] },
+  { categoria: "Pisos", subtotal: area * 180, itens: [] },
+  { categoria: "Revestimentos", subtotal: area * 120, itens: [] },
+  { categoria: "Forro", subtotal: area * 70, itens: [] },
+  { categoria: "Cobertura", subtotal: area * 220, itens: [] },
+  { categoria: "Impermeabilização", subtotal: area * 35, itens: [] },
+  { categoria: "Esquadrias", subtotal: area * 150, itens: [] },
+  { categoria: "Vidros", subtotal: area * 45, itens: [] },
+  { categoria: "Pintura", subtotal: area * 90, itens: [] },
+  { categoria: "Instalações Hidrossanitárias", subtotal: area * 120, itens: [] },
+  { categoria: "Instalações Elétricas", subtotal: area * 100, itens: [] },
+  { categoria: "SPDA", subtotal: area * 20, itens: [] },
+  { categoria: "Combate a Incêndio", subtotal: area * 30, itens: [] },
+  { categoria: "Climatização", subtotal: area * 60, itens: [] },
+  { categoria: "CFTV", subtotal: area * 20, itens: [] },
+  { categoria: "Automação", subtotal: area * 25, itens: [] },
+  { categoria: "Internet e Dados", subtotal: area * 15, itens: [] },
+  { categoria: "Louças e Metais", subtotal: area * 90, itens: [] },
+  { categoria: "Urbanização", subtotal: area * 50, itens: [] },
+  { categoria: "Paisagismo", subtotal: area * 30, itens: [] },
+  { categoria: "Limpeza Final", subtotal: area * 10, itens: [] }
+]
 };
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"

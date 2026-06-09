@@ -1,23 +1,18 @@
-import {
-  collection,
-  addDoc,
-  serverTimestamp
-} from "firebase/firestore";
-
-import { db } from "../firebase";
-
-export const salvarOrcamento = async (
-  uid,
-  resultado
-) => {
-
-  return await addDoc(
-    collection(db, "orcamentos"),
+export default async function handler(req, res) {
+  const response = await fetch(
+    "https://api.anthropic.com/v1/messages",
     {
-      uid,
-      resultado,
-      criadoEm: serverTimestamp()
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify(req.body)
     }
   );
 
-};
+  const data = await response.json();
+
+  res.status(200).json(data);
+}
