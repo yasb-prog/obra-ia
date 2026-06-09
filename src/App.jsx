@@ -301,7 +301,13 @@ const dadosProjeto =
 
   const area = Number(dadosProjeto.area || 150);
 
-
+console.log("ENVIANDO PARA CLAUDE:");
+console.log(JSON.stringify({
+  model: "claude-sonnet-4-0",
+  max_tokens: 8000,
+  system: SYSTEM_PROMPT,
+  messages
+}, null, 2));
 const response = await fetch("https://obra-ia.vercel.app/api/orcamento", 
   {
     method: "POST",
