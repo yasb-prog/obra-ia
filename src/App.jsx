@@ -300,7 +300,7 @@ const dadosProjeto =
 
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
-  model: "claude-3-7-sonnet-20250219",
+  model: "claude-sonnet-4-20250514",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
@@ -312,7 +312,7 @@ const response = await fetch("https://obra-ia.vercel.app/api/orcamento",
       "Content-Type": "application/json"
     },
 body: JSON.stringify({
-  model: "claude-3-7-sonnet-20250219",
+  model: "claude-sonnet-4-20250514",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
@@ -325,8 +325,11 @@ const texto = await response.text();
 
 console.log("RESPOSTA API:");
 console.log(texto);
-
 const data = JSON.parse(texto);
+
+console.log("DATA COMPLETA:");
+console.log(data);
+
 if (data.error) {
   throw new Error(data.error.message);
 }
