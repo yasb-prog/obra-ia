@@ -24,74 +24,82 @@ import {
 ReactGA.initialize("G-6JFRXKH5LX");
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-const ANTHROPIC_API_KEY =
-  import.meta.env.VITE_ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `
 Você é um engenheiro orçamentista especialista em SINAPI.
 
-Retorne SOMENTE JSON válido.
+Analise integralmente o PDF.
 
-Use exatamente esta estrutura:
+Leia TODAS as páginas.
+
+Retorne SOMENTE JSON.
+
+Formato obrigatório:
 
 {
-  "projeto": {
-    "nome": "Casa Residencial",
-    "tipo": "Residencial",
-    "area_total": "150m²",
-    "descricao": "Casa em alvenaria convencional",
-    "cidade": "São Paulo",
-    "estado": "SP"
-  },
+  "projeto": {},
+  "prazo_estimado_meses": 0,
 
-  "prazo_estimado_meses": 8,
+  "resumo_financeiro": {},
 
-  "resumo_financeiro": {
-    "total_material": 120000,
-    "total_mao_de_obra": 85000,
-    "bdi_valor": 30000,
-    "encargos_sociais_valor": 12000,
-    "impostos_valor": 8000,
-    "custo_por_m2": 1700,
-    "total_geral": 255000
-  },
+  "quantitativos": [
+    {
+      "categoria": "Fundação",
+      "subtotal": 0,
+      "itens": [
+        {
+          "codigo_sinapi": "",
+          "descricao": "",
+          "unidade": "",
+          "quantidade": 0,
+          "custo_unitario_material": 0,
+          "custo_unitario_mao_de_obra": 0,
+          "total_item": 0
+        }
+      ]
+    }
+  ]
+}
 
-: [
+Categorias obrigatórias:
 
-    quantitativos: [
-  { categoria: "Fundação", subtotal: area * 120, itens: [] },
-  { categoria: "Estrutura", subtotal: area * 220, itens: [] },
-  { categoria: "Alvenaria", subtotal: area * 180, itens: [] },
-  { categoria: "Chapisco", subtotal: area * 40, itens: [] },
-  { categoria: "Reboco", subtotal: area * 80, itens: [] },
-  { categoria: "Contrapiso", subtotal: area * 60, itens: [] },
-  { categoria: "Pisos", subtotal: area * 180, itens: [] },
-  { categoria: "Revestimentos", subtotal: area * 120, itens: [] },
-  { categoria: "Forro", subtotal: area * 70, itens: [] },
-  { categoria: "Cobertura", subtotal: area * 220, itens: [] },
-  { categoria: "Impermeabilização", subtotal: area * 35, itens: [] },
-  { categoria: "Esquadrias", subtotal: area * 150, itens: [] },
-  { categoria: "Vidros", subtotal: area * 45, itens: [] },
-  { categoria: "Pintura", subtotal: area * 90, itens: [] },
-  { categoria: "Instalações Hidrossanitárias", subtotal: area * 120, itens: [] },
-  { categoria: "Instalações Elétricas", subtotal: area * 100, itens: [] },
-  { categoria: "SPDA", subtotal: area * 20, itens: [] },
-  { categoria: "Combate a Incêndio", subtotal: area * 30, itens: [] },
-  { categoria: "Climatização", subtotal: area * 60, itens: [] },
-  { categoria: "CFTV", subtotal: area * 20, itens: [] },
-  { categoria: "Automação", subtotal: area * 25, itens: [] },
-  { categoria: "Internet e Dados", subtotal: area * 15, itens: [] },
-  { categoria: "Louças e Metais", subtotal: area * 90, itens: [] },
-  { categoria: "Urbanização", subtotal: area * 50, itens: [] },
-  { categoria: "Paisagismo", subtotal: area * 30, itens: [] },
-  { categoria: "Limpeza Final", subtotal: area * 10, itens: [] }
-]
+- Fundação
+- Estrutura
+- Alvenaria
+- Chapisco
+- Emboço
+- Reboco
+- Contrapiso
+- Pisos
+- Revestimentos
+- Forro
+- Cobertura
+- Impermeabilização
+- Esquadrias
+- Vidros
+- Pintura
+- Instalações Hidrossanitárias
+- Instalações Elétricas
+- SPDA
+- Combate a Incêndio
+- Climatização
+- CFTV
+- Automação
+- Internet e Dados
+- Louças e Metais
+- Urbanização
+- Paisagismo
+- Limpeza Final
 
-NÃO escreva explicações.
-NÃO use markdown.
-NÃO escreva texto fora do JSON.
+Para cada categoria gere itens reais SINAPI.
 
-Os valores devem ser estimados com referência SINAPI.
+Nunca retorne itens vazios.
+
+Nunca retorne:
+
+"itens": []
+
+Sempre preencher quantidade, unidade, código SINAPI e valor.
 `;
 
 
@@ -291,98 +299,42 @@ y += 10;
 const dadosProjeto =
   extrairDadosProjeto(text);
 
-
-
-
-
-
   const area = Number(dadosProjeto.area || 150);
 
 
-const response = await fetch(
-  "/api/orcamento",
+const response = await fetch("https://obra-ia.vercel.app/api/orcamento", 
   {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-0",
-      max_tokens: 4000,
-      messages: [
-        {
-          role: "user",
-          content: `
-${SYSTEM_PROMPT}
-
-Área: ${area} m²
-
-Descrição:
-${text}
-`
-        }
-      ]
-    })
+  body: JSON.stringify({
+  model: "claude-sonnet-4-0",
+  max_tokens: 8000,
+  system: SYSTEM_PROMPT,
+  messages
+})
   }
 );
+console.log("STATUS:", response.status);
 
-const data = await response.json();
+const texto = await response.text();
 
-console.log("RESPOSTA CLAUDE:", data);
+console.log("RESPOSTA API:");
+console.log(texto);
 
-console.log("CLAUDE:", data);
+const data = JSON.parse(texto);
 
-const parsed = {
-  projeto: {
-    nome: "Projeto ObraAI",
-    tipo: "Residencial",
-    area_total: area + "m²",
-    descricao: text
-  },
+const textoClaude =
+  data.content?.[0]?.text;
 
-  prazo_estimado_meses: 6,
+const textoLimpo = textoClaude
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
 
-  resumo_financeiro: {
-    total_material: area * 900,
-    total_mao_de_obra: area * 600,
-    bdi_valor: area * 150,
-    encargos_sociais_valor: area * 80,
-    impostos_valor: area * 50,
-    custo_por_m2: 1780,
-    total_geral: area * 1780
-  },
-
- quantitativos: [
-  { categoria: "Fundação", subtotal: area * 120, itens: [] },
-  { categoria: "Estrutura", subtotal: area * 220, itens: [] },
-  { categoria: "Alvenaria", subtotal: area * 180, itens: [] },
-  { categoria: "Chapisco", subtotal: area * 40, itens: [] },
-  { categoria: "Reboco", subtotal: area * 80, itens: [] },
-  { categoria: "Contrapiso", subtotal: area * 60, itens: [] },
-  { categoria: "Pisos", subtotal: area * 180, itens: [] },
-  { categoria: "Revestimentos", subtotal: area * 120, itens: [] },
-  { categoria: "Forro", subtotal: area * 70, itens: [] },
-  { categoria: "Cobertura", subtotal: area * 220, itens: [] },
-  { categoria: "Impermeabilização", subtotal: area * 35, itens: [] },
-  { categoria: "Esquadrias", subtotal: area * 150, itens: [] },
-  { categoria: "Vidros", subtotal: area * 45, itens: [] },
-  { categoria: "Pintura", subtotal: area * 90, itens: [] },
-  { categoria: "Instalações Hidrossanitárias", subtotal: area * 120, itens: [] },
-  { categoria: "Instalações Elétricas", subtotal: area * 100, itens: [] },
-  { categoria: "SPDA", subtotal: area * 20, itens: [] },
-  { categoria: "Combate a Incêndio", subtotal: area * 30, itens: [] },
-  { categoria: "Climatização", subtotal: area * 60, itens: [] },
-  { categoria: "CFTV", subtotal: area * 20, itens: [] },
-  { categoria: "Automação", subtotal: area * 25, itens: [] },
-  { categoria: "Internet e Dados", subtotal: area * 15, itens: [] },
-  { categoria: "Louças e Metais", subtotal: area * 90, itens: [] },
-  { categoria: "Urbanização", subtotal: area * 50, itens: [] },
-  { categoria: "Paisagismo", subtotal: area * 30, itens: [] },
-  { categoria: "Limpeza Final", subtotal: area * 10, itens: [] }
-]
-};
+const parsed = JSON.parse(textoLimpo);
+ 
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
 );
