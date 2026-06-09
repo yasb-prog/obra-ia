@@ -54,23 +54,153 @@ Use exatamente esta estrutura:
     "total_geral": 255000
   },
 
-  "quantitativos": [
-    {
-      "categoria": "Fundação",
-      "subtotal": 25000,
-      "itens": [
-        {
-          "descricao": "Escavação manual",
-          "unidade": "m³",
-          "quantidade": 25,
-          "custo_unitario_material": 0,
-          "custo_unitario_mao_de_obra": 95,
-          "total_item": 2375
-        }
-      ]
-    }
-  ]
-}
+: [
+
+     quantitativos: [
+  {
+    categoria: "Fundação",
+    subtotal: 25000,
+    itens: [...]
+  },
+
+  {
+    categoria: "Estrutura",
+    subtotal: 45000,
+    itens: [...]
+     descricao: "Escavação manual",
+        unidade: "m³",
+        quantidade: 25,
+        custo_unitario_material: 0,
+        custo_unitario_mao_de_obra: 95,
+        total_item: 2375
+  },
+
+  {
+    categoria: "Alvenaria",
+    subtotal: 38000,
+    itens: [...]
+  },
+
+  {
+    categoria: "Chapisco",
+    subtotal: 8500,
+    itens: [
+      {
+        descricao: "Chapisco paredes",
+        unidade: "m²",
+        quantidade: 600,
+        custo_unitario_material: 4,
+        custo_unitario_mao_de_obra: 5,
+        total_item: 5400
+      }
+    ]
+  },
+
+  {
+    categoria: "Reboco",
+    subtotal: 18000,
+    itens: [
+      {
+        descricao: "Reboco interno",
+        unidade: "m²",
+        quantidade: 600,
+        custo_unitario_material: 10,
+        custo_unitario_mao_de_obra: 20,
+        total_item: 18000
+      }
+    ]
+  },
+
+  {
+    categoria: "Pisos",
+    subtotal: 28000,
+    itens: [
+      {
+        descricao: "Porcelanato",
+        unidade: "m²",
+        quantidade: 150,
+        custo_unitario_material: 120,
+        custo_unitario_mao_de_obra: 40,
+        total_item: 24000
+      }
+    ]
+  },
+
+  {
+    categoria: "Esquadrias",
+    subtotal: 22000,
+    itens: [
+      {
+        descricao: "Portas e janelas",
+        unidade: "vb",
+        quantidade: 1,
+        custo_unitario_material: 18000,
+        custo_unitario_mao_de_obra: 4000,
+        total_item: 22000
+      }
+    ]
+  },
+
+  {
+    categoria: "Instalações Hidrossanitárias",
+    subtotal: 18000,
+    itens: [
+      {
+        descricao: "Tubulações e conexões",
+        unidade: "vb",
+        quantidade: 1,
+        custo_unitario_material: 12000,
+        custo_unitario_mao_de_obra: 6000,
+        total_item: 18000
+      }
+    ]
+  },
+
+  {
+    categoria: "Instalações Elétricas",
+    subtotal: 15000,
+    itens: [
+      {
+        descricao: "Fiação, quadros e tomadas",
+        unidade: "vb",
+        quantidade: 1,
+        custo_unitario_material: 9000,
+        custo_unitario_mao_de_obra: 6000,
+        total_item: 15000
+      }
+    ]
+  },
+
+  {
+    categoria: "Pintura",
+    subtotal: 12000,
+    itens: [
+      {
+        descricao: "Pintura interna e externa",
+        unidade: "m²",
+        quantidade: 600,
+        custo_unitario_material: 8,
+        custo_unitario_mao_de_obra: 12,
+        total_item: 12000
+      }
+    ]
+  },
+
+  {
+    categoria: "Instalações Especiais",
+    subtotal: 10000,
+    itens: [
+      {
+        descricao: "Infra para internet, CFTV e automação",
+        unidade: "vb",
+        quantidade: 1,
+        custo_unitario_material: 7000,
+        custo_unitario_mao_de_obra: 3000,
+        total_item: 10000
+      }
+    ]
+  }
+]
 
 NÃO escreva explicações.
 NÃO use markdown.
@@ -273,47 +403,118 @@ y += 10;
       } else {
         messages = [{ role: "user", content: text }];
       }
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-    const res = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt
-            }
-          ]
-        }
-      ]
-    })
-  }
-);
+const dadosProjeto =
+  extrairDadosProjeto(text);
 
-const data = await res.json();
 
-const texto =
-  data.candidates?.[0]
-      ?.content?.parts?.[0]
-      ?.text;
 
-      if (!res.ok) {
-        throw new Error(
-  JSON.stringify(data)
-);
+
+
+
+  const area = Number(dadosProjeto.area || 150);
+
+const parsed = {
+  projeto: {
+    nome: "Projeto ObraAI",
+    tipo: "Residencial",
+    area_total: area + "m²",
+    descricao: text
+  },
+
+  prazo_estimado_meses: 6,
+
+  resumo_financeiro: {
+    total_material: area * 900,
+    total_mao_de_obra: area * 600,
+    bdi_valor: area * 150,
+    encargos_sociais_valor: area * 80,
+    impostos_valor: area * 50,
+    custo_por_m2: 1780,
+    total_geral: area * 1780
+  },
+
+  quantitativos:
+   [
+{
+  categoria: "Fundação",
+  subtotal: 25000,
+  itens: []
+},
+
+{
+  categoria: "Estrutura",
+  subtotal: 45000,
+  itens: []
+},
+
+{
+  categoria: "Alvenaria",
+  subtotal: 38000,
+  itens: []
+},
+
+{
+  categoria: "Chapisco",
+  subtotal: 8500,
+  itens: []
+},
+
+{
+  categoria: "Reboco",
+  subtotal: 18000,
+  itens: []
+},
+
+{
+  categoria: "Pisos",
+  subtotal: 28000,
+  itens: []
+},
+
+{
+  categoria: "Esquadrias",
+  subtotal: 22000,
+  itens: []
+},
+
+{
+  categoria: "Instalações Hidrossanitárias",
+  subtotal: 18000,
+  itens: []
+},
+
+{
+  categoria: "Instalações Elétricas",
+  subtotal: 15000,
+  itens: []
+},
+
+{
+  categoria: "Pintura",
+  subtotal: 12000,
+  itens: []
+},
+
+{
+  categoria: "Cobertura",
+  subtotal: 32000,
+  itens: []
+},
+
+{
+  categoria: "Louças e Metais",
+  subtotal: 14000,
+  itens: []
+},
+
+{
+  categoria: "Instalações Especiais",
+  subtotal: 10000,
+  itens: []
 }
-  
-      const cleanTxt = texto
-      .replaceAll("```json", "")
-      .replaceAll("```", "")
-      .trim();
-      const parsed = JSON.parse(cleanTxt);
-      const historico = JSON.parse(
+  ]
+};
+const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
 );
 
@@ -327,19 +528,17 @@ localStorage.setItem(
   "orcamentos",
   JSON.stringify(historico)
 );
-
-
-
-const dadosProjeto =
-  extrairDadosProjeto(text);
-
-parsed.projeto.area_total =
-  dadosProjeto.area + "m²";
-
-parsed.projeto.padrao =
-  dadosProjeto.padrao;
+console.log("PARSED:", parsed);
 
 setResult(parsed);
+
+setTab("result");
+
+setExpanded(
+  Object.fromEntries(
+    parsed.quantitativos.map((_, i) => [i, i < 2])
+  )
+);
       setTab("result");
       setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
     } catch(e) {
@@ -348,6 +547,7 @@ setResult(parsed);
       setLoading(false);
     }
   };
+
 const exportarExcel = () => {
   trackEvent("Exportar Excel");
   console.log(result);
@@ -814,7 +1014,9 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
     </div>
   ))}
 </div>
-
+<div style={{color:"red"}}>
+  Quantitativos: {result.quantitativos?.length}
+</div>
             <div style={{ display:"grid", gap:8 }}>
               {result.quantitativos?.map((cat, idx) => (
                 <div key={idx} style={{ border:"1px solid #1a1a25", borderRadius:4, overflow:"hidden" }}>
