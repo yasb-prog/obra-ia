@@ -334,7 +334,10 @@ if (data.error) {
   throw new Error(data.error.message);
 }
 const textoClaude =
-  data.content?.[0]?.text;
+  data.content?.[0]?.text ||
+  data.anthropicResponse;
+  console.log("TEXTO CLAUDE:");
+console.log(textoClaude);
 if (!textoClaude) {
   throw new Error("Claude não retornou conteúdo.");
 }
