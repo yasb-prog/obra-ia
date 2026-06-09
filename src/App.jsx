@@ -100,6 +100,7 @@ Nunca retorne:
 "itens": []
 
 Sempre preencher quantidade, unidade, código SINAPI e valor.
+["SINAPI","Descricao","Un","Qtd","Mat/Un","MO/Un","Total"]<td>{item.codigo_sinapi}</td>
 `;
 
 
@@ -231,14 +232,10 @@ doc.text(
 
 y += 10;
 
+if (y > 260) {
   doc.addPage();
-
-  doc.setFillColor(255,255,255);
-  doc.rect(0, 0, 210, 297, "F");
-
-  doc.setTextColor(20,20,20);
-
   y = 20;
+}
 
       doc.text(
         `Total: R$ ${item.total_item}`,
@@ -303,7 +300,7 @@ const dadosProjeto =
 
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
-  model: "claude-sonnet-4-0",
+  model: "claude-3-7-sonnet-20250219",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
@@ -314,8 +311,8 @@ const response = await fetch("https://obra-ia.vercel.app/api/orcamento",
     headers: {
       "Content-Type": "application/json"
     },
-  body: JSON.stringify({
-  model: "claude-sonnet-4-0",
+body: JSON.stringify({
+  model: "claude-3-7-sonnet-20250219",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
@@ -330,10 +327,14 @@ console.log("RESPOSTA API:");
 console.log(texto);
 
 const data = JSON.parse(texto);
-
+if (data.error) {
+  throw new Error(data.error.message);
+}
 const textoClaude =
   data.content?.[0]?.text;
-
+if (!textoClaude) {
+  throw new Error("Claude não retornou conteúdo.");
+}
 const textoLimpo = textoClaude
   .replace(/```json/g, "")
   .replace(/```/g, "")
@@ -350,6 +351,16 @@ historico.unshift({
   criadoEm: new Date().toISOString(),
   resultado: parsed
 });
+console.log("RETORNO COMPLETO:", parsed);
+
+console.log(
+  "QUANTITATIVOS:",
+  parsed.quantitativos?.map(cat => ({
+    categoria: cat.categoria,
+    quantidadeDeItens: cat.itens?.length,
+    primeiroItem: cat.itens?.[0]
+  }))
+);
 
 localStorage.setItem(
   "orcamentos",
