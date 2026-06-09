@@ -300,7 +300,7 @@ const dadosProjeto =
 
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
-  model: "claude-sonnet-4-0",
+  model: "claude-opus-4-8",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
@@ -312,7 +312,7 @@ const response = await fetch("https://obra-ia.vercel.app/api/orcamento",
       "Content-Type": "application/json"
     },
 body: JSON.stringify({
-  model: "claude-sonnet-4-0",
+  model: "claude-opus-4-8",
   max_tokens: 8000,
   system: SYSTEM_PROMPT,
   messages
