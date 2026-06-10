@@ -397,18 +397,9 @@ try {
     )
   );
 
-  throw ;
-}
-
-  console.log("ERRO JSON:");
-  console.log(e);
-
-  console.log("TEXTO LIMPO:");
-  console.log(textoLimpo);
-
   throw e;
-
 }
+
  
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
