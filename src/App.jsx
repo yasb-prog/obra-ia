@@ -309,7 +309,7 @@ const dadosProjeto =
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
   model: "claude-opus-4-8",
-  max_tokens: 8000,
+  max_tokens: 16000,
   system: SYSTEM_PROMPT,
   messages
 }, null, 2));
@@ -346,6 +346,7 @@ const textoClaude =
   data.anthropicResponse;
 
 if (!textoClaude) {
+  
   throw new Error("Claude não retornou conteúdo.");
 }
 
@@ -362,10 +363,16 @@ let respostaAnthropic;
 
 try {
   respostaAnthropic = JSON.parse(textoClaude);
-} catch (e) {
+catch (e) {
 
   console.log("ERRO AO PARSEAR TEXTO CLAUDE");
   console.log(e);
+
+  console.log("MENSAGEM:");
+  console.log(e.message);
+
+  console.log("TAMANHO:");
+  console.log(textoClaude.length);
 
   console.log("ULTIMOS 1000 CHARS:");
   console.log(
