@@ -407,30 +407,6 @@ try {
 
 const parsed = respostaAnthropic;
 
-try {
-
-  const jsonCorrigido =
-    textoLimpo
-      .replace(/,\s*}/g, "}")
-      .replace(/,\s*]/g, "]");
-
-  parsed = JSON.parse(jsonCorrigido);
-
-} catch (e) {
-
-  console.log("ERRO JSON:");
-  console.log(e);
-
-  console.log("ULTIMOS 1000:");
-  console.log(
-    textoLimpo.substring(
-      Math.max(0, textoLimpo.length - 1000)
-    )
-  );
-
-  throw e;
-}
-
  
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
