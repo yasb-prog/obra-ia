@@ -326,15 +326,17 @@ if (y > 260) {
   };
 
   const analyze = async () => {
-    if (creditos <= 0) {
+if (creditos <= 0) {
 
   alert(
-    "Você não possui créditos. Compre um pacote para continuar."
+    "Você utilizou seu crédito gratuito."
   );
 
   setTab("assinatura");
 
   return;
+
+}
 }
     trackEvent("Gerar Orcamento");
     if (!file && !text.trim()) { setError("Insira um arquivo ou descreva o projeto."); return; }
@@ -835,8 +837,9 @@ style={{
         
  {[
   ["upload","// Projeto"],
-  ["result","// Orcamento"],
-  ["historico","// Historico"]
+["result","// Orçamento"],
+["historico","// Histórico"],
+["assinatura","// Planos"]
 ].map(([id,label]) => (
 
   <button
@@ -924,6 +927,183 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
       </div>
 
     )}
+    {tab === "assinatura" && (
+
+<div
+  style={{
+    maxWidth:"1200px",
+    margin:"0 auto",
+    padding:"40px 20px"
+  }}
+>
+
+  <h1
+    style={{
+      textAlign:"center",
+      marginBottom:"10px"
+    }}
+  >
+    Planos ObraIA
+  </h1>
+
+  <p
+    style={{
+      textAlign:"center",
+      color:"#888",
+      marginBottom:"40px"
+    }}
+  >
+    Seu primeiro orçamento é grátis.
+    Após isso escolha um pacote.
+  </p>
+
+  <div
+    style={{
+      display:"grid",
+      gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",
+      gap:"20px"
+    }}
+  >
+
+    {/* PLANO 1 */}
+
+    <div
+      style={{
+        border:"1px solid #1a1a25",
+        borderRadius:"20px",
+        padding:"30px",
+        background:"#0b1020"
+      }}
+    >
+
+      <h2>1 Orçamento</h2>
+
+      <h1
+        style={{
+          color:"#3b82f6"
+        }}
+      >
+        R$ 9,90
+      </h1>
+
+      <ul>
+        <li>1 crédito</li>
+        <li>PDF</li>
+        <li>Excel</li>
+        <li>Histórico</li>
+      </ul>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2D3JcPK",
+            "_blank"
+          )
+        }
+      >
+        Comprar
+      </button>
+
+    </div>
+
+    {/* PLANO 2 */}
+
+    <div
+      style={{
+        border:"1px solid #3b82f6",
+        borderRadius:"20px",
+        padding:"30px",
+        background:"#0b1020"
+      }}
+    >
+
+      <h2>5 Orçamentos</h2>
+
+      <h1
+        style={{
+          color:"#22c55e"
+        }}
+      >
+        R$ 39,90
+      </h1>
+
+      <ul>
+        <li>5 créditos</li>
+        <li>PDF</li>
+        <li>Excel</li>
+        <li>Histórico</li>
+      </ul>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2ySXx1g",
+            "_blank"
+          )
+        }
+      >
+        Comprar
+      </button>
+
+    </div>
+
+    {/* PLANO 3 */}
+
+    <div
+      style={{
+        border:"1px solid #f59e0b",
+        borderRadius:"20px",
+        padding:"30px",
+        background:"#0b1020"
+      }}
+    >
+
+      <h2>10 Orçamentos</h2>
+
+      <h1
+        style={{
+          color:"#f59e0b"
+        }}
+      >
+        R$ 79,90
+      </h1>
+
+      <ul>
+        <li>10 créditos</li>
+        <li>PDF</li>
+        <li>Excel</li>
+        <li>Histórico</li>
+      </ul>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2uUNiML",
+            "_blank"
+          )
+        }
+      >
+        Comprar
+      </button>
+
+    </div>
+
+  </div>
+
+  <div
+    style={{
+      marginTop:"40px",
+      textAlign:"center",
+      color:"#888"
+    }}
+  >
+    Após o pagamento envie o comprovante para
+    liberação dos créditos.
+  </div>
+
+</div>
+
+)}
 
     {orcamentos.map((orcamento) => (
 
