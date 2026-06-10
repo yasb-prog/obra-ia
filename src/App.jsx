@@ -358,13 +358,18 @@ const data = JSON.parse(texto);
 
 console.log("DATA COMPLETA:");
 console.log(data);
+console.log("CHAVES DATA:");
+console.log(Object.keys(data));
 
 if (data.error) {
   throw new Error(data.error.message);
 }
+console.log("DATA:", data);
+
 const textoClaude =
   data.content?.[0]?.text ||
-  data.anthropicResponse;
+  data.anthropicResponse ||
+  JSON.stringify(data);
 
 if (!textoClaude) {
   
@@ -433,17 +438,18 @@ localStorage.setItem(
   JSON.stringify(historico)
 );
 console.log("PARSED:", parsed);
-
+console.log("QUANTITATIVOS EXISTE?", !!parsed.quantitativos);
+console.log("TIPO QUANTITATIVOS:", typeof parsed.quantitativos);
+console.log("QUANTIDADE:", parsed.quantitativos?.length);
 setResult(parsed);
 
 setTab("result");
 
 setExpanded(
   Object.fromEntries(
-    parsed.quantitativos.map((_, i) => [i, i < 2])
+    (parsed.quantitativos || []).map((_, i) => [i, i < 2])
   )
 );
-
 } catch (e) {
 
   setError("Erro: " + e.message);
