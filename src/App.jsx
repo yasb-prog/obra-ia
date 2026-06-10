@@ -1029,6 +1029,7 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
                             <tr key={i} style={{ borderBottom:"1px solid #111" }}>
                              <td style={{ padding:"10px 12px", color:"#ccc" }}>
   {item.codigo_sinapi}
+</td>
 
 <td style={{ padding:"10px 12px", color:"#ccc" }}>
   {item.descricao}
