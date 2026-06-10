@@ -137,7 +137,7 @@ mínimo 3 itens.Cada categoria deve conter entre 2 e 3 itens.
 Fundação, Estrutura, Alvenaria,
 Instalações Elétricas e
 Instalações Hidrossanitárias:
-mínimo 3 itens.
+mínimo 3 itens.s
 Arredonde todos os valores para inteiros.
 O resumo_financeiro é obrigatório.
 
@@ -315,6 +315,7 @@ if (y > 260) {
   const [user, setUser] = useState(null);
   const fileRef = useRef(null);
   const [orcamentos, setOrcamentos] = useState([]);
+  const [creditos, setCreditos] = useState(0);
 
   const handleFile = (f) => {
     trackEvent("Upload PDF");
@@ -576,16 +577,62 @@ Total:
 };
 
 const loginGoogle = async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
 
-    trackEvent("Login Google");
+  try {
+
+    const result =
+      await signInWithPopup(
+        auth,
+        provider
+      );
+
+    const userRef = doc(
+      db,
+      "usuarios",
+      result.user.uid
+    );
+
+    const userSnap =
+      await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+
+      await setDoc(userRef, {
+        nome:
+          result.user.displayName,
+
+        email:
+          result.user.email,
+
+        creditos: 1,
+
+        criadoEm:
+          new Date().toISOString()
+      });
+
+      setCreditos(1);
+
+    } else {
+
+      const dados =
+        userSnap.data();
+
+      setCreditos(
+        dados.creditos || 0
+      );
+
+    }
 
     setUser(result.user);
+
   } catch (err) {
+
     console.log(err);
+
   }
+
 };
+
 
 const logout = async () => {
   await signOut(auth);
@@ -659,6 +706,17 @@ if (!user) {
             marginBottom:"24px"
           }}
         />
+
+        <div
+  style={{
+    marginTop:"12px",
+    color:"#60a5fa",
+    fontWeight:"700",
+    fontSize:"16px"
+  }}
+>
+  Créditos: {creditos}
+</div>
 
         <h1
           style={{
