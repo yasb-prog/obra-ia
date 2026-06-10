@@ -326,6 +326,16 @@ if (y > 260) {
   };
 
   const analyze = async () => {
+    if (creditos <= 0) {
+
+  alert(
+    "Você não possui créditos. Compre um pacote para continuar."
+  );
+
+  setTab("assinatura");
+
+  return;
+}
     trackEvent("Gerar Orcamento");
     if (!file && !text.trim()) { setError("Insira um arquivo ou descreva o projeto."); return; }
     setLoading(true); setError(null); setResult(null);
@@ -489,6 +499,14 @@ console.log("PARSED:", parsed);
 console.log("QUANTITATIVOS EXISTE?", !!parsed.quantitativos);
 console.log("TIPO QUANTITATIVOS:", typeof parsed.quantitativos);
 console.log("QUANTIDADE:", parsed.quantitativos?.length);
+await updateDoc(
+  doc(db, "usuarios", user.uid),
+  {
+    creditos: creditos - 1
+  }
+);
+
+setCreditos(creditos - 1);
 setResult(parsed);
 
 setTab("result");
