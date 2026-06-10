@@ -1,7 +1,12 @@
 export default async function handler(req, res) {
 
   try {
+console.log("API KEY EXISTE:", !!process.env.ANTHROPIC_API_KEY);
 
+console.log(
+  "INICIO:",
+  process.env.ANTHROPIC_API_KEY?.slice(0, 20)
+);
     const response = await fetch(
       "https://api.anthropic.com/v1/messages",
       {

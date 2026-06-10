@@ -397,7 +397,7 @@ try {
     )
   );
 
-  throw e;
+  throw ;
 }
 
   console.log("ERRO JSON:");
@@ -447,7 +447,7 @@ setExpanded(
 );
       setTab("result");
       setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
-     catch(e) {
+     (e) {
       setError("Erro: " + e.message);
     } finally {
       setLoading(false);
