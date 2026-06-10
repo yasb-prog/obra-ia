@@ -358,8 +358,24 @@ console.log(typeof textoClaude);
 console.log("PRIMEIROS 200 CHARS:");
 console.log(textoClaude.substring(0, 200));
 
-const respostaAnthropic =
-  JSON.parse(textoClaude);
+let respostaAnthropic;
+
+try {
+  respostaAnthropic = JSON.parse(textoClaude);
+} catch (e) {
+
+  console.log("ERRO AO PARSEAR TEXTO CLAUDE");
+  console.log(e);
+
+  console.log("ULTIMOS 1000 CHARS:");
+  console.log(
+    textoClaude.substring(
+      Math.max(0, textoClaude.length - 1000)
+    )
+  );
+
+  throw e;
+}
   
 console.log("CONTENT:");
 console.log(respostaAnthropic.content);
@@ -636,11 +652,9 @@ if (!user) {
 
 return (
 
-  
     <div 
 
-    style={{ minHeight:"100vh",
-overflowY:"auto", background:"#0a0a0f", fontFamily:"arial", color:"#e8e0d0" }}>
+    style={{ minHeight:"100vh",overflowY:"auto", background:"#0a0a0f", fontFamily:"arial", color:"#e8e0d0" }}>
 
     <div
   style={{
@@ -649,7 +663,7 @@ overflowY:"auto", background:"#0a0a0f", fontFamily:"arial", color:"#e8e0d0" }}>
     display:"flex",
     justifyContent:"space-between",
     alignItems:"center",
-    background:"rgba(10,10,15,0.95)",
+    background:"#0a0a0f",
     backdropFilter:"blur(12px)",
     position:"sticky",
     top:0,
