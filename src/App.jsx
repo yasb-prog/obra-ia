@@ -101,6 +101,25 @@ Nunca retorne:
 
 Sempre preencher quantidade, unidade, código SINAPI e valor.
 RETORNE APENAS JSON VÁLIDO.
+IMPORTANTE:
+
+Utilize descrições extremamente curtas.
+
+Máximo de 30 caracteres por descrição.
+
+Exemplos:
+
+"Ponto rede CAT6"
+"Rack telecom"
+"Caixa sifonada"
+"Tubo PVC DN100"
+"Extintor ABC"
+"Pintura acrílica"
+
+Nunca utilize descrições longas.
+Nunca explique os itens.
+Nunca detalhe aplicações.
+Nunca detalhe conectores, acessórios ou complementos.
 
 NÃO utilize blocos markdown json.
 NÃO utilize markdown.
@@ -108,7 +127,9 @@ NÃO utilize comentários.
 NÃO utilize aspas dentro dos textos.
 Escape corretamente todos os caracteres especiais.
 A resposta deve ser compatível com JSON.parse().
-Cada categoria deve conter no mínimo 2 itens.
+Cada categoria deve conter entre 1 e 2 itens.
+Priorize 1 item quando representar adequadamente a categoria.
+Arredonde todos os valores para inteiros.
 `;
 
 
