@@ -102,8 +102,8 @@ Nunca retorne:
 Sempre preencher quantidade, unidade, código SINAPI e valor.
 RETORNE APENAS JSON VÁLIDO.
 
+NÃO utilize blocos markdown json.
 NÃO utilize markdown.
-NÃO utilize ```json.
 NÃO utilize comentários.
 NÃO utilize aspas dentro dos textos.
 Escape corretamente todos os caracteres especiais.
