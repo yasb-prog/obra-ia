@@ -127,11 +127,17 @@ NÃO utilize comentários.
 NÃO utilize aspas dentro dos textos.
 Escape corretamente todos os caracteres especiais.
 A resposta deve ser compatível com JSON.parse().
-Cada categoria deve conter entre 3 e 5 itens.
+Cada categoria deve conter entre 2 e 3 itens.
 
-Nunca retornar apenas 1 item.
+Fundação, Estrutura, Alvenaria,
+Instalações Elétricas e
+Instalações Hidrossanitárias:
+mínimo 3 itens.Cada categoria deve conter entre 2 e 3 itens.
 
-Fundação, Estrutura, Alvenaria, Elétrica e Hidrossanitária devem conter no mínimo 5 itens.
+Fundação, Estrutura, Alvenaria,
+Instalações Elétricas e
+Instalações Hidrossanitárias:
+mínimo 3 itens.
 Arredonde todos os valores para inteiros.
 O resumo_financeiro é obrigatório.
 
