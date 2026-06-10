@@ -343,12 +343,6 @@ if (y > 260) {
 const dadosProjeto =
   extrairDadosProjeto(text);
 
-  const area =
-  parsed.projeto?.area_construida_m2 || 150;
-
-parsed.resumo_financeiro.custo_por_m2 =
-  parsed.resumo_financeiro.total_geral / area;
-
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
   model: "claude-opus-4-8",
@@ -454,7 +448,11 @@ parsed.resumo_financeiro.total_geral =
   bdi +
   encargos +
   impostos;
+const area =
+  parsed.projeto?.area_construida_m2 || 150;
 
+parsed.resumo_financeiro.custo_por_m2 =
+  parsed.resumo_financeiro.total_geral / area;
  
 const historico = JSON.parse(
   localStorage.getItem("orcamentos") || "[]"
