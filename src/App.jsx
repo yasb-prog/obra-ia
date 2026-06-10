@@ -108,7 +108,7 @@ NÃO utilize comentários.
 NÃO utilize aspas dentro dos textos.
 Escape corretamente todos os caracteres especiais.
 A resposta deve ser compatível com JSON.parse().
-Cada categoria deve conter no mínimo 3 itens.
+Cada categoria deve conter no mínimo 2 itens.
 `;
 
 
@@ -402,20 +402,22 @@ let parsed;
 
 try {
 
-  parsed = JSON.parse(textoLimpo);
+  const jsonCorrigido =
+    textoLimpo
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]");
+
+  parsed = JSON.parse(jsonCorrigido);
 
 } catch (e) {
 
   console.log("ERRO JSON:");
   console.log(e);
 
-  console.log("POSICAO:");
-  console.log(e.message);
-
-  console.log("ULTIMOS 500 CHARS:");
+  console.log("ULTIMOS 1000:");
   console.log(
     textoLimpo.substring(
-      textoLimpo.length - 500
+      Math.max(0, textoLimpo.length - 1000)
     )
   );
 
