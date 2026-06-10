@@ -362,17 +362,16 @@ console.log(textoClaude.substring(0, 200));
 let respostaAnthropic;
 
 try {
+
   respostaAnthropic = JSON.parse(textoClaude);
-catch (e) {
+
+} catch (e) {
 
   console.log("ERRO AO PARSEAR TEXTO CLAUDE");
   console.log(e);
 
   console.log("MENSAGEM:");
   console.log(e.message);
-
-  console.log("TAMANHO:");
-  console.log(textoClaude.length);
 
   console.log("ULTIMOS 1000 CHARS:");
   console.log(
