@@ -127,9 +127,27 @@ NÃO utilize comentários.
 NÃO utilize aspas dentro dos textos.
 Escape corretamente todos os caracteres especiais.
 A resposta deve ser compatível com JSON.parse().
-Cada categoria deve conter entre 1 e 2 itens.
-Priorize 1 item quando representar adequadamente a categoria.
+Cada categoria deve conter entre 3 e 5 itens.
+
+Nunca retornar apenas 1 item.
+
+Fundação, Estrutura, Alvenaria, Elétrica e Hidrossanitária devem conter no mínimo 5 itens.
 Arredonde todos os valores para inteiros.
+O resumo_financeiro é obrigatório.
+
+Calcule e preencha:
+
+- total_material
+- total_mao_de_obra
+- bdi_valor
+- encargos_sociais_valor
+- impostos_valor
+- total_geral
+- custo_por_m2
+
+Nunca retorne zero.
+
+total_geral = soma de todos os subtotais.
 `;
 
 
@@ -325,7 +343,11 @@ if (y > 260) {
 const dadosProjeto =
   extrairDadosProjeto(text);
 
-  const area = Number(dadosProjeto.area || 150);
+  const area =
+  parsed.projeto?.area_construida_m2 || 150;
+
+parsed.resumo_financeiro.custo_por_m2 =
+  parsed.resumo_financeiro.total_geral / area;
 
 console.log("ENVIANDO PARA CLAUDE:");
 console.log(JSON.stringify({
@@ -411,6 +433,27 @@ try {
   
 
 const parsed = respostaAnthropic;
+const totalMaterial =
+  parsed.resumo_financeiro?.total_material || 0;
+
+const totalMaoObra =
+  parsed.resumo_financeiro?.total_mao_de_obra || 0;
+
+const bdi =
+  parsed.resumo_financeiro?.bdi_valor || 0;
+
+const encargos =
+  parsed.resumo_financeiro?.encargos_sociais_valor || 0;
+
+const impostos =
+  parsed.resumo_financeiro?.impostos_valor || 0;
+
+parsed.resumo_financeiro.total_geral =
+  totalMaterial +
+  totalMaoObra +
+  bdi +
+  encargos +
+  impostos;
 
  
 const historico = JSON.parse(
@@ -984,13 +1027,32 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
 
                           {cat.itens?.map((item, i) => (
                             <tr key={i} style={{ borderBottom:"1px solid #111" }}>
-                              <td style={{ padding:"10px 12px", color:"#ccc" }}>{item.descricao}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>{item.unidade}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>{fmtn(item.quantidade)}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#60a5fa" }}>{fmt(item.custo_unitario_material)}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#a78bfa" }}>{fmt(item.custo_unitario_mao_de_obra)}</td>
-                              <td style={{ padding:"10px 12px", textAlign:"right", color:"#3b82f6", fontWeight:600 }}>{fmt(item.total_item)}</td>
-                              <td style={{ padding:"10px 12px", color:"#ccc" }}> {item.codigo_sinapi} </td>
+                             <td style={{ padding:"10px 12px", color:"#ccc" }}>
+  {item.codigo_sinapi}
+
+<td style={{ padding:"10px 12px", color:"#ccc" }}>
+  {item.descricao}
+</td>
+
+<td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>
+  {item.unidade}
+</td>
+
+<td style={{ padding:"10px 12px", textAlign:"right", color:"#888" }}>
+  {fmtn(item.quantidade)}
+</td>
+
+<td style={{ padding:"10px 12px", textAlign:"right", color:"#60a5fa" }}>
+  {fmt(item.custo_unitario_material)}
+</td>
+
+<td style={{ padding:"10px 12px", textAlign:"right", color:"#a78bfa" }}>
+  {fmt(item.custo_unitario_mao_de_obra)}
+</td>
+
+<td style={{ padding:"10px 12px", textAlign:"right", color:"#3b82f6", fontWeight:600 }}>
+  {fmt(item.total_item)}
+</td>
 
 
                             </tr>
