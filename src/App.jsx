@@ -404,22 +404,8 @@ try {
   throw e;
 }
   
-console.log("CONTENT:");
-console.log(respostaAnthropic.content);
 
-const textoLimpo =
-  respostaAnthropic.content?.[0]?.text
-    ?.replace(/```json/g, "")
-    ?.replace(/```/g, "")
-    ?.trim();
-
-console.log("TEXTO LIMPO:");
-console.log(textoLimpo);
-
-console.log("TAMANHO:");
-console.log(textoLimpo.length);
-
-let parsed;
+const parsed = respostaAnthropic;
 
 try {
 
