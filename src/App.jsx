@@ -436,14 +436,17 @@ setExpanded(
     parsed.quantitativos.map((_, i) => [i, i < 2])
   )
 );
-      setTab("result");
-      setExpanded(Object.fromEntries(parsed.quantitativos.map((_, i) => [i, i < 2])));
-     (e) {
-      setError("Erro: " + e.message);
-    } finally {
-      setLoading(false);
-    }
-  ;
+
+} catch (e) {
+
+  setError("Erro: " + e.message);
+
+} finally {
+
+  setLoading(false);
+
+}
+};
 
 const exportarExcel = () => {
   trackEvent("Exportar Excel");
@@ -976,6 +979,9 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#60a5fa" }}>{fmt(item.custo_unitario_material)}</td>
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#a78bfa" }}>{fmt(item.custo_unitario_mao_de_obra)}</td>
                               <td style={{ padding:"10px 12px", textAlign:"right", color:"#3b82f6", fontWeight:600 }}>{fmt(item.total_item)}</td>
+                              <td style={{ padding:"10px 12px", color:"#ccc" }}> {item.codigo_sinapi} </td>
+
+
                             </tr>
                           ))}
                         </tbody>
