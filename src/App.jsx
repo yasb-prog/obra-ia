@@ -5,7 +5,14 @@ import * as pdfjsLib from "pdfjs-dist";
 import jsPDF from "jspdf";
 import logo from "./assets/logo.jpeg";
 import * as XLSX from "xlsx";
-import { onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc
+} from "firebase/firestore";
+
+import { db } from "./firebase";
 import ReactGA from "react-ga4";
 
 
@@ -325,19 +332,26 @@ if (y > 260) {
     setFile(f); setError(null);
   };
 
-  const analyze = async () => {
+const analyze = async () => {
+
 if (creditos <= 0) {
 
-  alert(
-    "Você utilizou seu crédito gratuito."
+  setError(
+    "Você não possui créditos. Escolha um plano."
   );
 
   setTab("assinatura");
 
   return;
+}
 
-}
-}
+  trackEvent("Gerar Orcamento");
+
+  if (!file && !text.trim()) {
+    setError("Insira um arquivo ou descreva o projeto.");
+    return;
+  }
+
     trackEvent("Gerar Orcamento");
     if (!file && !text.trim()) { setError("Insira um arquivo ou descreva o projeto."); return; }
     setLoading(true); setError(null); setResult(null);
@@ -927,183 +941,7 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
       </div>
 
     )}
-    {tab === "assinatura" && (
 
-<div
-  style={{
-    maxWidth:"1200px",
-    margin:"0 auto",
-    padding:"40px 20px"
-  }}
->
-
-  <h1
-    style={{
-      textAlign:"center",
-      marginBottom:"10px"
-    }}
-  >
-    Planos ObraIA
-  </h1>
-
-  <p
-    style={{
-      textAlign:"center",
-      color:"#888",
-      marginBottom:"40px"
-    }}
-  >
-    Seu primeiro orçamento é grátis.
-    Após isso escolha um pacote.
-  </p>
-
-  <div
-    style={{
-      display:"grid",
-      gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",
-      gap:"20px"
-    }}
-  >
-
-    {/* PLANO 1 */}
-
-    <div
-      style={{
-        border:"1px solid #1a1a25",
-        borderRadius:"20px",
-        padding:"30px",
-        background:"#0b1020"
-      }}
-    >
-
-      <h2>1 Orçamento</h2>
-
-      <h1
-        style={{
-          color:"#3b82f6"
-        }}
-      >
-        R$ 9,90
-      </h1>
-
-      <ul>
-        <li>1 crédito</li>
-        <li>PDF</li>
-        <li>Excel</li>
-        <li>Histórico</li>
-      </ul>
-
-      <button
-        onClick={() =>
-          window.open(
-            "https://mpago.la/2D3JcPK",
-            "_blank"
-          )
-        }
-      >
-        Comprar
-      </button>
-
-    </div>
-
-    {/* PLANO 2 */}
-
-    <div
-      style={{
-        border:"1px solid #3b82f6",
-        borderRadius:"20px",
-        padding:"30px",
-        background:"#0b1020"
-      }}
-    >
-
-      <h2>5 Orçamentos</h2>
-
-      <h1
-        style={{
-          color:"#22c55e"
-        }}
-      >
-        R$ 39,90
-      </h1>
-
-      <ul>
-        <li>5 créditos</li>
-        <li>PDF</li>
-        <li>Excel</li>
-        <li>Histórico</li>
-      </ul>
-
-      <button
-        onClick={() =>
-          window.open(
-            "https://mpago.la/2ySXx1g",
-            "_blank"
-          )
-        }
-      >
-        Comprar
-      </button>
-
-    </div>
-
-    {/* PLANO 3 */}
-
-    <div
-      style={{
-        border:"1px solid #f59e0b",
-        borderRadius:"20px",
-        padding:"30px",
-        background:"#0b1020"
-      }}
-    >
-
-      <h2>10 Orçamentos</h2>
-
-      <h1
-        style={{
-          color:"#f59e0b"
-        }}
-      >
-        R$ 79,90
-      </h1>
-
-      <ul>
-        <li>10 créditos</li>
-        <li>PDF</li>
-        <li>Excel</li>
-        <li>Histórico</li>
-      </ul>
-
-      <button
-        onClick={() =>
-          window.open(
-            "https://mpago.la/2uUNiML",
-            "_blank"
-          )
-        }
-      >
-        Comprar
-      </button>
-
-    </div>
-
-  </div>
-
-  <div
-    style={{
-      marginTop:"40px",
-      textAlign:"center",
-      color:"#888"
-    }}
-  >
-    Após o pagamento envie o comprovante para
-    liberação dos créditos.
-  </div>
-
-</div>
-
-)}
 
     {orcamentos.map((orcamento) => (
 
@@ -1156,6 +994,165 @@ transition:"0.3s", borderRadius:4, padding:48, textAlign:"center", cursor:"point
     ))}
 
   </div>
+  
+  )}
+
+{tab === "assinatura" && (
+
+<div
+  style={{
+    display:"grid",
+    gap:"20px"
+  }}
+>
+
+  <h1
+    style={{
+      textAlign:"center",
+      color:"#3b82f6"
+    }}
+  >
+    Planos ObraIA
+  </h1>
+
+  <p
+    style={{
+      textAlign:"center",
+      color:"#888"
+    }}
+  >
+    Seu primeiro orçamento foi gratuito.
+    Escolha um plano para continuar.
+  </p>
+
+  <div
+    style={{
+      display:"grid",
+      gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",
+      gap:"20px"
+    }}
+  >
+
+    <div
+      style={{
+        background:"#0d0d15",
+        border:"1px solid #1a1a25",
+        borderRadius:"12px",
+        padding:"24px"
+      }}
+    >
+
+      <h2>1 Orçamento</h2>
+
+      <h1 style={{color:"#3b82f6"}}>
+        R$ 9,90
+      </h1>
+
+      <p>1 crédito</p>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2D3JcPK",
+            "_blank"
+          )
+        }
+        style={{
+          width:"100%",
+          padding:"14px",
+          border:"none",
+          borderRadius:"8px",
+          background:"#2563eb",
+          color:"#fff",
+          cursor:"pointer"
+        }}
+      >
+        Comprar
+      </button>
+
+    </div>
+
+    <div
+      style={{
+        background:"#0d0d15",
+        border:"1px solid #22c55e",
+        borderRadius:"12px",
+        padding:"24px"
+      }}
+    >
+
+      <h2>5 Orçamentos</h2>
+
+      <h1 style={{color:"#22c55e"}}>
+        R$ 39,90
+      </h1>
+
+      <p>5 créditos</p>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2ySXx1g",
+            "_blank"
+          )
+        }
+        style={{
+          width:"100%",
+          padding:"14px",
+          border:"none",
+          borderRadius:"8px",
+          background:"#22c55e",
+          color:"#fff",
+          cursor:"pointer"
+        }}
+      >
+        Comprar
+      </button>
+
+    </div>
+
+    <div
+      style={{
+        background:"#0d0d15",
+        border:"1px solid #f59e0b",
+        borderRadius:"12px",
+        padding:"24px"
+      }}
+    >
+
+      <h2>10 Orçamentos</h2>
+
+      <h1 style={{color:"#f59e0b"}}>
+        R$ 79,90
+      </h1>
+
+      <p>10 créditos</p>
+
+      <button
+        onClick={() =>
+          window.open(
+            "https://mpago.la/2uUNiML",
+            "_blank"
+          )
+        }
+        style={{
+          width:"100%",
+          padding:"14px",
+          border:"none",
+          borderRadius:"8px",
+          background:"#f59e0b",
+          color:"#000",
+          cursor:"pointer"
+        }}
+      >
+        Comprar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
 
 )}
         {tab === "result" && result && (
