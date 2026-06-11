@@ -6,11 +6,11 @@ import jsPDF from "jspdf";
 import logo from "./assets/logo.jpeg";
 import * as XLSX from "xlsx";
 import {
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc
-} from "firebase/firestore";
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "firebase/auth";
 
 import { db } from "./firebase";
 import ReactGA from "react-ga4";
@@ -24,9 +24,7 @@ import { gerarEstimativas } from "./utils/estimativas";
 import { extrairDadosProjeto } from "./utils/extrator";
 import {
   auth,
-  provider,
-  signInWithPopup,
-  signOut
+  provider
 } from "./firebase";
 ReactGA.initialize("G-6JFRXKH5LX");
 pdfjsLib.GlobalWorkerOptions.workerSrc =
